@@ -82,7 +82,7 @@ services:
 
 #-----------------------------MAIL-----------------------------------------------------------------------------------------
   mail:
-    image: tvial/docker-mailserver:latest
+    image: docker-mailserver:latest
     build:
         context: ./mailserver/
         dockerfile: Dockerfile
@@ -97,7 +97,7 @@ services:
     volumes:
     - maildata:/var/mail
     - mailstate:/var/mail-state
-    - ./config/:/tmp/docker-mailserver/
+    - ./mailserver/config/:/tmp/docker-mailserver/
     - nginxdata:/var/attachments
     - certData:/etc/letsencrypt/
     environment:
