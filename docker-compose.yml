@@ -109,6 +109,7 @@ services:
     - DMS_DEBUG=0
     - PERMIT_DOCKER=network
     - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+    - NGINX_DOWNLOAD_DOMAIN=downloads.${DOMAINNAME}
     cap_add:
     - NET_ADMIN
     - SYS_PTRACE
