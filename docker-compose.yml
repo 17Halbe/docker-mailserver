@@ -1,0 +1,126 @@
+version: '2'
+
+services:
+#-------------------------------Nginx-Proxy------------------
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx/conf.d"
+      - "/etc/nginx/vhost.d"
+      - "/usr/share/nginx/html"
+      - certData:/etc/nginx/certs:ro
+#    networks:
+ #     - proxy-tier
+    restart: always
+
+  nginx-gen:
+    image: jwilder/docker-gen
+ #   build: 
+#      - label:com.github.jrcs.letsencrypt_nginx_proxy_companion.docker_gen
+    container_name: nginx-gen
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "./proxy/templates/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro"
+    volumes_from:
+      - nginx-proxy
+      #-only-exposed
+    entrypoint: /usr/local/bin/docker-gen -notify-sighup nginx-proxy -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
+    restart: always
+ #----------------------------Letsencrypt----------------- 
+#letsencrypt-nginx-proxy-companion:
+#  image: jrcs/letsencrypt-nginx-proxy-companion
+#  container_name: letsencrypt-nginx-proxy-companion
+#  volumes_from:
+#    - nginx-proxy
+#  volumes:
+#    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+#    - certData:/etc/nginx/certs:rw
+#  environment:
+#    - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
+# restart: always
+#    webmail:
+#    image: nginx:alpine
+#    container_name: webmail
+#    volumes_from:
+#      - nginx-proxy
+#    environment: 
+#    - VIRTUAL_HOST=mail.${DOMAINNAME}
+#    #- VIRTUAL_NETWORK=nginx-proxy-net
+#    - VIRTUAL_PORT=80
+#    - LETSENCRYPT_HOST=mail.${DOMAINNAME}
+#    - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
+#  restart: always
+#----------------- Downloadgateway----------------------------
+  downloadgateway:
+    image: downloadgateway:latest
+    build: 
+        context: ./downloadgateway/
+        dockerfile: Dockerfile  
+    container_name: downloads
+    domainname: ${DOMAINNAME}
+#    ports:
+#    - "80:80"
+#    - "443:443"
+    #volumes_from:
+    #  - nginx
+    environment:
+    - VIRTUAL_HOST=downloads.localhost #${DOMAINNAME}
+    #- VIRTUAL_NETWORK=nginx-proxy-net
+    - VIRTUAL_PORT=80
+   # - VIRTUAL_PROTO=https
+   # - LETSENCRYPT_HOST=downloads.${DOMAINNAME}
+   # - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
+    - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+    - NGINX_SERVERNAMES=${NGINX_SERVERNAMES}
+    volumes:
+        - nginxdata:/usr/share/nginx/downloads:ro
+   # restart: always
+
+#-----------------------------MAIL-----------------------------------------------------------------------------------------
+  mail:
+    image: docker-mailserver:latest
+    build:
+        context: ./mailserver/
+        dockerfile: Dockerfile
+    hostname: mx
+    domainname: ${DOMAINNAME}
+    container_name: mail
+    ports:
+    - "25:25"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+    volumes:
+    - maildata:/var/mail
+    - mailstate:/var/mail-state
+    - ./config/:/tmp/docker-mailserver/
+    - nginxdata:/var/attachments
+    - certData:/etc/letsencrypt/
+    environment:
+    - ENABLE_SPAMASSASSIN=1
+    - ENABLE_CLAMAV=1
+    - ENABLE_FAIL2BAN=1
+    - ENABLE_POSTGREY=1
+    - ONE_DIR=1
+    - DMS_DEBUG=0
+    - PERMIT_DOCKER=network
+    - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+    cap_add:
+    - NET_ADMIN
+    - SYS_PTRACE
+    restart: always
+ 
+  
+volumes:
+  maildata:
+    driver: local
+  mailstate:
+    driver: local
+  nginxdata:
+    driver: local
+  certData:
+    driver: local

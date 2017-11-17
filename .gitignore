@@ -1,0 +1,9 @@
+#ignore environment variables for docker-compose
+.env
+/website/
+mailserver/docker-compose.yaml
+mailserver/config/*
+mailserver/config/sieve-filter/*
+!/mailserver/config
+!/mailserver/config/sieve-filter/attext.py
+!/mailserver/config/sieve-filter

@@ -1,0 +1,75 @@
+version: '2'
+
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx/conf.d"
+      - "/etc/nginx/vhost.d"
+      - "/usr/share/nginx/html"
+      - certData:/etc/nginx/certs:ro
+    networks:
+      - proxy-tier
+  nginx-gen:
+    image: jwilder/docker-gen
+    build: 
+      - labels: 
+        - "com.github.jrcs.letsencrypt_nginx_proxy_companion.docker_gen"
+    container_name: nginx-gen
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+      - "./proxy/templates/nginx-compose-v2.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro"
+    volumes_from:
+      - nginx
+    entrypoint: /usr/local/bin/docker-gen -notify-sighup nginx -watch -only-exposed -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
+  letsencrypt-nginx-proxy-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt-nginx-proxy-companion
+    volumes_from:
+      - nginx
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - certData:/etc/nginx/certs:rw
+    environment:
+      - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
+      - NGINX_PROXY_CONTAINER=nginx
+
+  mail:
+    image: tvial/docker-mailserver:latest
+    hostname: mx
+    domainname: gar-nich.net
+    container_name: mail
+    ports:
+    - "25:25"
+    - "143:143"
+    - "587:587"
+    - "993:993"
+    volumes:
+    - maildata:/var/mail
+    - mailstate:/var/mail-state
+    - ./config/:/tmp/docker-mailserver/
+    #- /var/log/docker-mailserver/:/var/log/
+    environment:
+    - ENABLE_SPAMASSASSIN=1
+    - ENABLE_CLAMAV=1
+    - ENABLE_FAIL2BAN=1
+    - ENABLE_POSTGREY=1
+    - ONE_DIR=1
+    - DMS_DEBUG=0
+    - PERMIT_DOCKER=network
+    cap_add:
+    - NET_ADMIN
+    - SYS_PTRACE
+    restart: always
+
+volumes:
+  maildata:
+    driver: local
+  mailstate:
+    driver: local
+  certData:
+    driver: local
