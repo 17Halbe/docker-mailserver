@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+# -*- coding: utf-8 -*-
 # 
 # mail-attachments-archiver
 # Author: Alexader Stölting
@@ -13,7 +13,11 @@ from email import header
 
 ### Adjust to your needs:
 #t[t.find("."):]
-host=os.environ["HOST"]
+try: 
+	host=os.environ["HOST"]
+except:
+	host="mx.localhost"
+
 outputdir="/var/attachments"  						# local Location to save the attachments to. Has to be writable by user: docker 
 nginx_url = "https://downloads" + host[host.find("."):]
 #nginx_url = "https://downloads." +  os.environ["NGINX_DOWNLOAD_DOMAIN"]			#the download url 
