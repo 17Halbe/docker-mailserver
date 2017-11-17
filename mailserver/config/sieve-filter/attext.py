@@ -171,7 +171,7 @@ Schönen Gruß,
    Der Der Download-Bot auf der Suche nach Dateien…
 ''',
         "file_deleted": \
-'''Subject: Datei wurde gelöscht
+u' ' + '''Subject: Datei wurde gelöscht
 
 Moin Moin,
 
@@ -358,9 +358,9 @@ for part in mail.walk():
 	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires + 7200)) + " ( crontab -l | grep -v -F " + str(expires) + " ) | crontab -') | crontab -", shell=True, stderr=subprocess.STDOUT)
 	#write out future mails:
 	if time.time() < (expires - 605000):
-		with open(os.path.join(mail_path, str(expires) + filename + "-warning.mail"),'w') as out:
+		with open(os.path.join(mail_path, str(expires) + filename + "-warning.mail"),mode='w', encoding='utf-8') as out:
 			out.write(mail_Content("file_delete_reminder",filename=filename,downloadLink=downloadLink,expires=expires))
-	with open(os.path.join(mail_path, str(expires) + filename + "-deleted.mail"),'w') as out:
+	with open(os.path.join(mail_path, str(expires) + filename + "-deleted.mail"),mode='w', encoding='utf-8') as out:
 		out.write(mail_Content("file_deleted",filename=filename,downloadLink=downloadLink,expires=expires))
 	
 	sendmail("success",filename=filename,downloadLink=downloadLink,expires=expires)
