@@ -68,7 +68,7 @@ services:
     #volumes_from:
     #  - nginx
     environment:
-    - VIRTUAL_HOST=downloads.localhost #${DOMAINNAME}
+    - VIRTUAL_HOST=downloads.${DOMAINNAME}
     #- VIRTUAL_NETWORK=nginx-proxy-net
     - VIRTUAL_PORT=80
    # - VIRTUAL_PROTO=https
@@ -82,7 +82,7 @@ services:
 
 #-----------------------------MAIL-----------------------------------------------------------------------------------------
   mail:
-    image: docker-mailserver:latest
+    image:  docker-mailserver:latest
     build:
         context: ./mailserver/
         dockerfile: Dockerfile
@@ -97,7 +97,7 @@ services:
     volumes:
     - maildata:/var/mail
     - mailstate:/var/mail-state
-    - ./config/:/tmp/docker-mailserver/
+    - ./mailserver/config/:/tmp/docker-mailserver/
     - nginxdata:/var/attachments
     - certData:/etc/letsencrypt/
     environment:
@@ -109,6 +109,7 @@ services:
     - DMS_DEBUG=0
     - PERMIT_DOCKER=network
     - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+    - NGINX_DOWNLOAD_DOMAIN=downloads.${DOMAINNAME}
     cap_add:
     - NET_ADMIN
     - SYS_PTRACE

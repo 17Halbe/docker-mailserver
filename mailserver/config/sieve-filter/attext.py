@@ -12,10 +12,12 @@ from email.parser import Parser
 from email import header
 
 ### Adjust to your needs:
-
+#t[t.find("."):]
+host=os.environ["HOST"]
 outputdir="/var/attachments"  						# local Location to save the attachments to. Has to be writable by user: docker 
-nginx_url = "https://" +  os.environ["DOMAINNAME"] + "/downloads/"			#the download url 
-nginx_secret = os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
+nginx_url = "https://downloads" + host[host.find("."):]
+#nginx_url = "https://downloads." +  os.environ["NGINX_DOWNLOAD_DOMAIN"]			#the download url 
+nginx_secret = "<YOUR NGINX-SECRET>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
 
 
 ### Shouldnt have to change a thing from here
