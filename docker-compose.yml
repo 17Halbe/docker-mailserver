@@ -68,7 +68,7 @@ services:
     #volumes_from:
     #  - nginx
     environment:
-    - VIRTUAL_HOST=downloads.localhost #${DOMAINNAME}
+    - VIRTUAL_HOST=downloads.${DOMAINNAME}
     #- VIRTUAL_NETWORK=nginx-proxy-net
     - VIRTUAL_PORT=80
    # - VIRTUAL_PROTO=https
@@ -82,7 +82,7 @@ services:
 
 #-----------------------------MAIL-----------------------------------------------------------------------------------------
   mail:
-    image: docker-mailserver:latest
+    image: tvial/docker-mailserver:latest
     build:
         context: ./mailserver/
         dockerfile: Dockerfile
