@@ -10,7 +10,7 @@ import email, email.header, smtplib, os, re, time, sys, subprocess
 from email.mime.text import MIMEText
 from email.parser import Parser
 from email import header
-
+import urllib
 ### Adjust to your needs:
 #t[t.find("."):]
 try: 
@@ -43,7 +43,7 @@ def sendmail(msgType,filename="",downloadLink="",expires=""):
 
 	# Send the message via our own SMTP server.
 	s = smtplib.SMTP('localhost')
-	s.send_message(msg)
+	s.send_message(msg.decode("utf-8"))
 	s.quit()
 
 	#print (headers)
@@ -326,6 +326,7 @@ for part in mail.walk():
 		counter += 1
 	# getting mail date
 	filename = decode_mime_words(u''+filename)
+	filename = urllib.parse.quote_plus(filename)
 	att_path = os.path.join(outputdir, filename)
 	mail_path = os.path.join(outputdir,".futuremails","")
 	# check if output directory exists
@@ -343,7 +344,7 @@ for part in mail.walk():
 
 	#create downloadlink
 	link = subprocess.check_output("/bin/echo -n '" + str(expires) + str(nginx_url) + str(nginx_secret) + "' | /usr/bin/openssl md5 -binary | /usr/bin/openssl base64 | /usr/bin/tr +/ -_ | /usr/bin/tr -d =", shell=True, stderr=subprocess.STDOUT)
-	downloadLink = nginx_url + filename + "?md5=" + link.strip().decode("utf-8") + "&expires=" + str(expires);
+	downloadLink = nginx_url + "/" + filename + "?md5=" + link.strip().decode("utf-8") + "&expires=" + str(expires);
 
 
 	# 1 week Warningdate in Crontab: time.strftime('%M %H %d %m *',time.localtime(expires - 604800))
