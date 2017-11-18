@@ -31,7 +31,7 @@ charset = ""
 user = ""
 downloadLink = ""
 expires = ""
-user =str(sys.argv[1:])
+user = os.environ["SENDER"] #str(sys.argv[1:])
 
 # source: https://stackoverflow.com/questions/12903893/python-imap-utf-8q-in-subject-string
 def decode_mime_words(s): return u''.join(word.decode(encoding or 'utf8') if isinstance(word, bytes) else word for word, encoding in email.header.decode_header(s))
@@ -39,14 +39,15 @@ def sendmail(msgType,filename="",downloadLink="",expires=""):
 	
 	# Open a plain text file for reading.  For this example, assume that
 	# the text file contains only ASCII characters.
-	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires))
 
+#TEMPO FIX 
+	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires).encode("ascii", "ignore").decode("ascii"))
+	print (headers, file=sys.stderr)
 	# Send the message via our own SMTP server.
 	s = smtplib.SMTP('localhost')
-	s.send_message(msg)
+	s.send_message(headers)
 	s.quit()
 
-	#print (headers)
 def mail_Content(msg_type, filename="Do Not know! O_o",downloadLink="Arghh! I could guess one",expires=""):
     '''
     msg_type:
@@ -237,9 +238,11 @@ Schönen Gruß,
         "success": \
 '''Subject: Hier ist der Link zur Datei ''' + filename + '''
 
+Content-Type: text/plain; charset="UTF-8"
+
 Moin Moin,
 
-und da haben wir’s ja schon! Die Dateien wurden erfolgreich hochgeladen und sind unter folgendem Link erreichbar:
+und da haben wir es ja schon! Die Dateien wurden erfolgreich hochgeladen und sind unter folgendem Link erreichbar:
 
 ''' + downloadLink + '''
 
