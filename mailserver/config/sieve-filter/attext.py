@@ -42,11 +42,11 @@ def sendmail(msgType,filename="",downloadLink="",expires=""):
 	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires))
 
 	# Send the message via our own SMTP server.
-	#s = smtplib.SMTP('localhost')
-	#s.send_message(msg)
-	#s.quit()
+	s = smtplib.SMTP('localhost')
+	s.send_message(msg)
+	s.quit()
 
-	print (headers)
+	#print (headers)
 def mail_Content(msg_type, filename="Do Not know! O_o",downloadLink="Arghh! I could guess one",expires=""):
     '''
     msg_type:
