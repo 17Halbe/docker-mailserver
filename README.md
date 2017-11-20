@@ -1,4 +1,7 @@
 # docker-mailserver
+
+STILL WIP... YOU SHOULDN'T EVEN TRY.. ;)
+
 Docker based setup of a mail-server, nginx-proxy, attachment downloader, webmailUI and stuff
 
 cp .env.default .env
