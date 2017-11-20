@@ -9,7 +9,9 @@
 import email, email.header, smtplib, os, re, time, sys, subprocess
 from email.mime.text import MIMEText
 from email.parser import Parser
-from email import header
+from smtplib import SMTP
+#from email.Header import Header
+from email.utils import parseaddr, formataddr
 import urllib
 ### Adjust to your needs:
 #t[t.find("."):]
@@ -20,7 +22,11 @@ except:
 
 outputdir="/var/attachments"  						# local Location to save the attachments to. Has to be writable by user: docker 
 nginx_url = "https://downloads" + host[host.find("."):]
-#nginx_url = "https://downloads." +  os.environ["NGINX_DOWNLOAD_DOMAIN"]			#the download url 
+try:
+   nginx_url = "https://downloads." +  os.environ["NGINX_DOWNLOAD_DOMAIN"]			#the download url 
+except:
+   pass
+
 nginx_secret = "<YOUR NGINX-SECRET>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
 
 
@@ -36,22 +42,73 @@ user = os.environ["SENDER"] #str(sys.argv[1:])
 # source: https://stackoverflow.com/questions/12903893/python-imap-utf-8q-in-subject-string
 def decode_mime_words(s): return u''.join(word.decode(encoding or 'utf8') if isinstance(word, bytes) else word for word, encoding in email.header.decode_header(s))
 def sendmail(msgType,filename="",downloadLink="",expires=""):
-	
-	# Open a plain text file for reading.  For this example, assume that
-	# the text file contains only ASCII characters.
+    sender = os.environ["RECIPIENT"] #'downloads@gar-nich.net'
+    recipient = os.environ["SENDER"]
+    print ("Sender: " + sender + " Empfänger: " + recipient, file=sys.stderr)
+    body = mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires)
+    subject = body[body.find(':') + 2:body.find('\n')]
+    body = body[body.find('\n'):]
+    """Send an email.
 
-#TEMPO FIX 
-	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires).encode("ascii", "ignore").decode("ascii"))
+    All arguments should be Unicode strings (plain ASCII works as well).
+
+    Only the real name part of sender and recipient addresses may contain
+    non-ASCII characters.
+
+    The email will be properly MIME encoded and delivered though SMTP to
+    localhost port 25.  This is easy to change if you want something different.
+
+    The charset of the email will be the first one out of US-ASCII, ISO-8859-1
+    and UTF-8 that can represent all the characters occurring in the email.
+    """
+
+    # Header class is smart enough to try US-ASCII, then the charset we
+    # provide, then fall back to UTF-8.
+    header_charset = 'ISO-8859-1'
+
+    # We must choose the body charset manually
+    for body_charset in 'US-ASCII', 'ISO-8859-1', 'UTF-8':
+        try:
+            body.encode(body_charset)
+        except UnicodeError:
+            pass
+        else:
+            break
+
+    # Split real name (which is optional) and email address parts
+    #sender_name, sender_addr = parseaddr(sender)
+    #recipient_name, recipient_addr = parseaddr(recipient)
+
+    # We must always pass Unicode strings to Header, otherwise it will
+    # use RFC 2047 encoding even on plain ASCII strings.
+    #sender_name = str(email.header.Header(sender_name, header_charset))
+    #recipient_name = str(email.header.Header(recipient_name, header_charset))
+
+    # Make sure email addresses do not contain non-ASCII characters
+    #sender = sender.encode('ascii')
+    #recipient = recipient.encode('ascii')
+
+    # Create the message ('plain' stands for Content-Type: text/plain)
+    msg = email.mime.text.MIMEText(body.encode('utf-8'), 'plain', 'utf-8') #body_charset)
+    msg['From'] = sender
+    msg['To'] = recipient
+    msg['Subject'] = email.header.Header(subject, 'utf-8') #header_charset)
+
+    # Send the message via SMTP to localhost:25
+    smtp = SMTP("localhost")
+    smtp.sendmail(sender, recipient, msg.as_string())
+    smtp.quit()
+
+
+'''
+	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires)) #.encode("ascii", "ignore").decode("ascii"))
 	print (headers, file=sys.stderr)
 	# Send the message via our own SMTP server.
 	s = smtplib.SMTP('localhost')
-<<<<<<< HEAD
-	s.send_message(msg.decode("utf-8"))
-=======
+#	s.send_message(msg.decode("utf-8"))
 	s.send_message(headers)
->>>>>>> 9fdb7f02addc8d00e6eb6ada505ba4380334ee1e
 	s.quit()
-
+'''
 def mail_Content(msg_type, filename="Do Not know! O_o",downloadLink="Arghh! I could guess one",expires=""):
     '''
     msg_type:
@@ -70,7 +127,6 @@ def mail_Content(msg_type, filename="Do Not know! O_o",downloadLink="Arghh! I co
     mailtext = {
         "help": \
 '''Subject: Die Downloadanleitung
-
 Hallo Du da!
 
 Du willst also eine Datei zum Download anbieten? Super, geht ganz einfach! Sagt zumindest Alex…
@@ -112,7 +168,6 @@ Schönen Gruß,
 ''',
         "fail_date_invalid": \
 '''Subject: Dauer war ungültig
-
 Moin Moin,
 
 Sorry, dass ich mich schon so schnell wieder melde, aber irgendwie scheinst Du was falsch verstanden zu haben, was den Zeitraum angeht, wie lange die Datei verfügbar sein soll. Zumindest hab ich Dich nicht verstanden und konnte die angegebene Dauer nicht interpretieren. :’(
@@ -137,7 +192,6 @@ Schönen Gruß,
 ''',
         "fail_date_not_found": \
 '''Subject: Dauer wurde nicht gefunden
-
 Moin Moin,
 
 Sorry, dass ich mich schon so schnell wieder melde, aber irgendwie scheinst Du vergessen zu haben, den Zeitraum anzugeben, wie lange die Datei verfügbar sein soll. 
@@ -193,7 +247,6 @@ der Download-Bot, jetzt ein wenig ärmer...
 ''',
         "file_delete_reminder": 
 '''Subject: ACHTUNG: Datei wird in ner Woche gelöscht
-
 Moin Moin,
 
 nur so zur Info, Deine von Dir am ''' + time.strftime('%A, den %d.%m.%y') + ''' hochgeladene Datei( ''' + filename + ''' ) wird in einer Woche gelöscht. Genauer am:
@@ -211,7 +264,6 @@ Der Download-Bot, kurz vor'm Nirvana...
 ''',
         "not_authorized": \
 '''Subject: Not Authorized
-
 Moin Moin,
 
 so geht’s ja nicht. Wahrscheinlich hast Du ja nur von einer nicht authorisierten Mail versendet, also einfach mit Deiner Standard-Mail nochmal probieren!
@@ -240,19 +292,16 @@ Schönen Gruß,
    Der Der Download-Bot auf der Suche nach netten E-Mail-Adressen…
 ''',
         "success": \
-'''Subject: Hier ist der Link zur Datei ''' + filename + '''
-
-Content-Type: text/plain; charset="UTF-8"
-
+'''Subject: Hier ist der Link zur Datei (''' + filename + ''')
 Moin Moin,
 
 und da haben wir es ja schon! Die Dateien wurden erfolgreich hochgeladen und sind unter folgendem Link erreichbar:
 
 ''' + downloadLink + '''
 
-unter dieser Adresse ist die Datei/en verfügbar bis:
+unter dieser Adresse ist die Datei/en verfügbar bis zum:
 
-''' + time.strftime('%A, den %d.%m.%y',time.localtime(expires)) + '''
+''' + time.strftime('%d.%m.%y',time.localtime(expires)) + '''
 
 Schönen Gruß und viel Spaß damit,
 
@@ -260,7 +309,7 @@ Schönen Gruß und viel Spaß damit,
 
 ''',
     }
-    return mailheader + mailtext.get(msg_type, "nothing")
+    return mailtext.get(msg_type, "nothing")
 
 # getting the mail content
 
@@ -333,7 +382,7 @@ for part in mail.walk():
 		counter += 1
 	# getting mail date
 	filename = decode_mime_words(u''+filename)
-	filename = urllib.parse.quote_plus(filename)
+	#filename = urllib.parse.quote_plus(filename)
 	att_path = os.path.join(outputdir, filename)
 	mail_path = os.path.join(outputdir,".futuremails","")
 	# check if output directory exists
@@ -351,7 +400,7 @@ for part in mail.walk():
 
 	#create downloadlink
 	link = subprocess.check_output("/bin/echo -n '" + str(expires) + str(nginx_url) + str(nginx_secret) + "' | /usr/bin/openssl md5 -binary | /usr/bin/openssl base64 | /usr/bin/tr +/ -_ | /usr/bin/tr -d =", shell=True, stderr=subprocess.STDOUT)
-	downloadLink = nginx_url + "/" + filename + "?md5=" + link.strip().decode("utf-8") + "&expires=" + str(expires);
+	downloadLink = nginx_url + "/" + urllib.parse.quote_plus(att_path) + "?md5=" + link.strip().decode("utf-8") + "&expires=" + str(expires);
 
 
 	# 1 week Warningdate in Crontab: time.strftime('%M %H %d %m *',time.localtime(expires - 604800))

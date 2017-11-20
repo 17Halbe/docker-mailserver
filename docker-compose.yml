@@ -61,14 +61,14 @@ services:
         context: ./downloadgateway/
         dockerfile: Dockerfile  
     container_name: downloads
-    domainname: ${DOMAINNAME}
+    domainname: localhost #${DOMAINNAME}
 #    ports:
 #    - "80:80"
 #    - "443:443"
     #volumes_from:
     #  - nginx
     environment:
-    - VIRTUAL_HOST=downloads.${DOMAINNAME}
+    - VIRTUAL_HOST=downloads.localhost #${DOMAINNAME}
     #- VIRTUAL_NETWORK=nginx-proxy-net
     - VIRTUAL_PORT=80
    # - VIRTUAL_PROTO=https
