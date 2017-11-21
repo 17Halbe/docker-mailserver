@@ -57,19 +57,10 @@ services:
 #----------------- Downloadgateway----------------------------
   downloadgateway:
     image: downloadgateway:latest
-    build: 
-        context: ./downloadgateway/
-        dockerfile: Dockerfile  
     container_name: downloads
     domainname: localhost #${DOMAINNAME}
-#    ports:
-#    - "80:80"
-#    - "443:443"
-    #volumes_from:
-    #  - nginx
     environment:
     - VIRTUAL_HOST=downloads.localhost #${DOMAINNAME}
-    #- VIRTUAL_NETWORK=nginx-proxy-net
     - VIRTUAL_PORT=80
    # - VIRTUAL_PROTO=https
    # - LETSENCRYPT_HOST=downloads.${DOMAINNAME}
@@ -78,6 +69,10 @@ services:
     - NGINX_SERVERNAMES=${NGINX_SERVERNAMES}
     volumes:
         - nginxdata:/usr/share/nginx/downloads:ro
+        - ./downloadgateway/conf.d/:/etc/nginx/conf.d/
+        - ./downloadgateway/contrib/:/usr/local/bin/
+    entrypoint: /usr/local/bin/start_nginx.sh
+
    # restart: always
 
 #-----------------------------MAIL-----------------------------------------------------------------------------------------
