@@ -1,6 +1,9 @@
 #ignore environment variables for docker-compose
 .env
-/website/
+/website/content/*
+/website/conf.d/*
+!/website/content/index.html.dist
+!/website/conf.d/default.conf.dist
 mailserver/docker-compose.yaml
 mailserver/config/*
 mailserver/config/sieve-filter/*
