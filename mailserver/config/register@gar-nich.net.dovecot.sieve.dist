@@ -1,0 +1,11 @@
+require ["vnd.dovecot.pipe"];
+# Save S/MIME Public Key
+if allof (address :matches "To" "register@gar-nich.net",
+		  address :is "from" ["alex@gar-nich.net","bine@gar-nich.net","alex@stoelti.land","stephan@stoelti.land"]) {
+#      if header :matches "from" "*" { set "from" "${1}"; }	
+      pipe "register-handler.py"; 
+# "${from}";
+	  discard;
+	  stop;
+	}
+} 

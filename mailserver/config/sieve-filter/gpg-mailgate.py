@@ -63,7 +63,7 @@ verbose = 'logging' in cfg and 'verbose' in cfg['logging'] and cfg['logging'].ge
 raw = sys.stdin.read()
 raw_message = email.message_from_string( raw )
 from_addr = raw_message['From']
-to_addrs = sys.argv[1:]
+to_addrs = os.environ["RECIPIENT"] #sys.argv[1:]
 
 def gpg_decrypt( raw_message, recipients ):
 
