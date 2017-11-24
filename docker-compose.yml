@@ -96,7 +96,7 @@ services:
     - nginxdata:/var/attachments
     - certData:/etc/letsencrypt/
     - ./mailserver/gpg-mailgate/:/var/gpgmailgate/
-    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
+#    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
     environment:
     - ENABLE_SPAMASSASSIN=1
     - ENABLE_CLAMAV=1
