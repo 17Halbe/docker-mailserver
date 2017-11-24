@@ -9,5 +9,7 @@ mailserver/config/*
 mailserver/config/sieve-filter/*
 !/mailserver/config/*.dist
 !/mailserver/config
+!/mailserver/config/sieve-filter/gpg-mailgate.py
+!/mailserver/config/sieve-filter/register-handler.py
 !/mailserver/config/sieve-filter/attext.py
 !/mailserver/config/sieve-filter
