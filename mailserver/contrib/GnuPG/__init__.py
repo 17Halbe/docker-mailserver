@@ -1,0 +1,177 @@
+#
+#	gpg-mailgate
+#
+#	This file is part of the gpg-mailgate source code.
+#
+#	gpg-mailgate is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+#	(at your option) any later version.
+#
+#	gpg-mailgate source code is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with gpg-mailgate source code. If not, see <http://www.gnu.org/licenses/>.
+#
+
+import os
+import os.path
+import subprocess
+import shutil
+import random
+import string
+from keyinfos import KeyInfos
+
+GPG_BIN = "/usr/bin/gpg2"
+
+
+
+#~ def private_keys( keyhome ):
+	#~ cmd = [GPG_BIN, '--homedir', keyhome, '--list-secret-keys', '--with-colons']
+	#~ p = subprocess.Popen( cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	#~ p.wait()
+	#~ keys = dict()
+	#~ for line in p.stdout.readlines():
+		#~ if line[0:3] == 'uid' or line[0:3] == 'sec':
+			#~ if ('<' not in line or '>' not in line):
+				#~ continue
+			#~ email = line.split('<')[1].split('>')[0]
+			#~ fingerprint = line.split(':')[4]
+			#~ keys[fingerprint] = email
+	#~ return keys
+
+def private_keys(keyhome):
+    keys = {}
+    K = KeyInfos(keyhome=keyhome, gpgbin=GPG_BIN)
+    seckeys = K.getSecretKeys()
+    for fingerprint, seckey in seckeys.items():
+        if seckey[1] == "Secret key":
+            email = seckey[10].split('<')[1].split('>')[0]
+            keys[fingerprint] = email
+    return keys
+
+
+#~ def public_keys( keyhome ):
+	#~ cmd = [GPG_BIN, '--homedir', keyhome, '--list-keys', '--with-colons']
+	#~ p = subprocess.Popen( cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+	#~ p.wait()
+	#~ keys = dict()
+	#~ for line in p.stdout.readlines():
+		#~ if line[0:3] == 'uid' or line[0:3] == 'pub':
+			#~ if ('<' not in line or '>' not in line):
+				#~ continue
+			#~ email = line.split('<')[1].split('>')[0]
+			#~ fingerprint = line.split(':')[4]
+			#~ keys[fingerprint] = email
+	#~ return keys
+
+def public_keys(keyhome):
+    keys = {}
+    K = KeyInfos(keyhome=keyhome, gpgbin=GPG_BIN)
+    pubkeys = K.getKeys()
+    for fingerprint, pubkey in pubkeys.items():
+        if pubkey[1] == "Public key":
+            email = pubkey[10].split('<')[1].split('>')[0]
+            keys[fingerprint] = email
+    return keys
+
+
+# confirms a key has a given email address
+def confirm_key( content, email ):
+	tmpkeyhome = ''
+
+	while True:
+		tmpkeyhome = '/tmp/' + ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(12))
+		if not os.path.exists(tmpkeyhome):
+			break
+
+	os.mkdir(tmpkeyhome)
+	localized_env = os.environ.copy()
+	localized_env["LANG"] = "C"
+	p = subprocess.Popen( [GPG_BIN, '--homedir', tmpkeyhome, '--import', '--batch'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=localized_env )
+	result = p.communicate(input=content)[1]
+	confirmed = False
+
+	for line in result.split("\n"):
+		if 'imported' in line and '<' in line and '>' in line:
+			if line.split('<')[1].split('>')[0].lower() == email.lower():
+				confirmed = True
+				break
+			else:
+				break # confirmation failed
+
+	# cleanup
+	shutil.rmtree(tmpkeyhome)
+
+	return confirmed
+
+# adds a key and ensures it has the given email address
+def add_key( keyhome, content ):
+	p = subprocess.Popen( [GPG_BIN, '--homedir', keyhome, '--import', '--batch'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,stderr=subprocess.PIPE )
+	p.communicate(input=content)
+	p.wait()
+
+def delete_key( keyhome, email ):
+	from email.utils import parseaddr
+	result = parseaddr(email)
+
+	if result[1]:
+		# delete all keys matching this email address
+		p = subprocess.Popen( [GPG_BIN, '--homedir', keyhome, '--delete-key', '--batch', '--yes', result[1]], stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+		p.wait()
+		return True
+
+	return False
+
+class GPGEncryptor:
+	def __init__(self, keyhome, recipients = None, charset = None):
+		self._keyhome = keyhome
+		self._message = ''
+		self._recipients = list()
+		self._charset = charset
+		if recipients != None:
+			self._recipients.extend(recipients)
+
+	def update(self, message):
+		self._message += message
+
+	def encrypt(self):
+		p = subprocess.Popen( self._command(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,stderr=subprocess.PIPE )
+		encdata = p.communicate(input=self._message)[0]
+		return (encdata, p.returncode)
+
+	def _command(self):
+		cmd = [GPG_BIN, "--trust-model", "always", "--homedir", self._keyhome, "--batch", "--yes", "--pgp7", "--no-secmem-warning", "-a", "-e"]
+
+		# add recipients
+		for recipient in self._recipients:
+			cmd.append("-r")
+			cmd.append(recipient)
+
+		# add on the charset, if set
+		if self._charset:
+			cmd.append("--comment")
+			cmd.append('Charset: ' + self._charset)
+
+		return cmd
+
+class GPGDecryptor:
+	def __init__(self, keyhome):
+		self._keyhome = keyhome
+		self._message = ''
+
+	def update(self, message):
+		self._message += message
+
+	def decrypt(self):
+		p = subprocess.Popen( self._command(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,stderr=subprocess.PIPE )
+		decdata = p.communicate(input=self._message)[0]
+		return (decdata, p.returncode)
+
+	def _command(self):
+		cmd = [GPG_BIN, "--trust-model", "always", "--homedir", self._keyhome, "--batch", "--yes", "--no-secmem-warning", "-a", "-d"]
+
+		return cmd
