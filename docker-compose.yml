@@ -23,8 +23,8 @@ services:
 #      - label:com.github.jrcs.letsencrypt_nginx_proxy_companion.docker_gen
     container_name: nginx-gen
     volumes:
-      - "/var/run/docker.sock:/tmp/docker.sock:ro"
-      - "./proxy/templates/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro"
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./proxy/templates/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
     volumes_from:
       - nginx-proxy
       #-only-exposed
@@ -95,6 +95,8 @@ services:
     - ./mailserver/config/:/tmp/docker-mailserver/
     - nginxdata:/var/attachments
     - certData:/etc/letsencrypt/
+    - ./mailserver/gpg-mailgate/:/var/gpgmailgate/
+    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
     environment:
     - ENABLE_SPAMASSASSIN=1
     - ENABLE_CLAMAV=1
