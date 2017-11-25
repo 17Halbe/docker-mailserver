@@ -11,6 +11,7 @@ mailserver/config/sieve-filter/*
 !/mailserver/config
 !/mailserver/config/sieve-filter/gpg-mailgate.py
 !/mailserver/config/sieve-pipe/register-handler.py
-!/mailserver/config/sieve-pipe
 !/mailserver/config/sieve-filter/attext.py
 !/mailserver/config/sieve-filter
+!/mailserver/config/sieve-pipe
+

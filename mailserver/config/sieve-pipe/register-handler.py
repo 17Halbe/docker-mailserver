@@ -10,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 
 # Read configuration from /etc/gpg-mailgate.conf
 _cfg = RawConfigParser()
-_cfg.read('/etc/gpg-mailgate.conf')
+_cfg.read('/tmp/docker-mailserver/gpg-mailgate.conf')
 cfg = dict()
 for sect in _cfg.sections():
 	cfg[sect] = dict()
