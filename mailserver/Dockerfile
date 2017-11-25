@@ -1,5 +1,6 @@
 FROM tvial/docker-mailserver:latest
-COPY ./contrib/GnuPG /usr/local/lib/python2.7/dist-packages
+RUN mkdir /usr/local/lib/python2.7/dist-packages/GnuPG
+COPY ./contrib/GnuPG /usr/local/lib/python2.7/dist-packages/GnuPG
 
 #RUN mkdir -p /var/gpgmailgate/smime
 #RUN mkdir /var/gpgmailgate/.gnupg
