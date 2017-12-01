@@ -1,0 +1,29 @@
+// That's the general Resilio Config file. All shared folder specific settings reside in the conf.d folder. 
+// Use the setup.sh script to create shares or get readonly keys of your shares.
+
+// Set your Device name in the .env file one folder above/below (whoever you ask)
+{
+  "listening_port" : 55555, // 0 - randomize port
+  "storage_path" : "/var/lib/resilio/storage-config",
+  "vendor" : "docker",
+  "display_new_version": false,
+  "directory_root" : "/var/lib/resilio/",
+  "directory_root_policy" : "all",
+  "folder_defaults.use_tracker" : true,
+  "folder_defaults.known_hosts" : "",
+  "log_size" : 1,
+  "device_name": "{DEVICE_NAME}",
+
+/* set location of pid file */
+  "pid_file" : "/var/lib/resilio/sync.pid",
+
+/* use UPnP for port mapping */
+  "use_upnp" : false,
+
+/* limits in kB/s. 0 - no limit */
+  "download_limit" : 0,
+  "upload_limit" : 0,
+
+/* !!! if you set shared folders in config file WebUI will be DISABLED !!!   shared directories specif
+ied in config file  override the folders previously added from WebUI. */
+  "shared_folders" :

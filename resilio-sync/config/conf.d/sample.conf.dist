@@ -1,0 +1,8 @@
+// You may edit this file on your own or set up new ones via the setup.sh script. 
+{                                                                                                    
+      "secret" : "FB4AAAABBBBCCCCEEEEDDDD65N", // required field - use --generate-secret in command line to create new secret            
+      "dir" : "SampleDir", // * required field  ----> Relative Paths will be put in /usr/share/resilio-sync/ <----
+      "search_lan" : false,                                                                                     
+      "use_sync_trash" : true, // enable SyncArchive to store files deleted on remote devices                                             
+      "overwrite_changes" : false // restore modified files to original version, ONLY for Read-Only folders 
+}

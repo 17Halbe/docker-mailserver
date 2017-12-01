@@ -96,6 +96,7 @@ services:
     - nginxdata:/var/attachments
     - certData:/etc/letsencrypt/
     - ./mailserver/gpg-mailgate/:/var/gpgmailgate/
+    - mailattachments:/var/resilio
 #    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
     environment:
     - ENABLE_SPAMASSASSIN=1
@@ -111,7 +112,25 @@ services:
     - NET_ADMIN
     - SYS_PTRACE
     restart: always
+
+#-------------------- Resilio Sync -------------------------------------------
+  resilio-sync:
+    image: resilio-sync:latest
+    container_name: sync
+    build:
+        context: ./resilio-sync/
+        dockerfile: Dockerfile
+    domainname: localhost #${DOMAINNAME}
+    environment:
+    - DEVICE_NAME=${DEVICE_NAME}
+    volumes:
+        - syncdata:/usr/share/resilio-sync/
+        - mailattachments:/usr/share/attachments/
+        - ./resilio-sync/config/:/tmp/resilio-config/
+
+   # restart: always
  
+#-------------------- Webseiten ----------------------------------------------
   website:
     image: nginx:alpine
     container_name: web
@@ -126,8 +145,14 @@ services:
     volumes:
         - ./website/conf.d/:/etc/nginx/conf.d:ro
         - ./website/content/:/usr/share/nginx/html:ro
+
    # restart: always
+   
 volumes:
+  mailattachments:
+    driver: local
+  syncdata:
+    driver: local
   maildata:
     driver: local
   mailstate:
