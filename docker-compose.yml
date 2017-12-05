@@ -56,7 +56,7 @@ services:
 #  restart: always
 #----------------- Downloadgateway----------------------------
   downloadgateway:
-    image: downloadgateway:latest
+    image: nginx:alpine
     container_name: downloads
     domainname: localhost #${DOMAINNAME}
     environment:
