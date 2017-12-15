@@ -16,7 +16,7 @@ if header :contains "X-Virus-Status" "Infected" {
 }
 
 # encrypt mails for local storage
-if anyof (address :matches "To" ["my.domain.net","my.other.domain.net"] {
+if anyof (address :matches "To" ["<DOMAIN>","<DOMAIN_2>"] {
     filter "gpg-mailgate.py";
     }
 
