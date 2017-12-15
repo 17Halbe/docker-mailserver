@@ -41,14 +41,14 @@ services:
       - certData:/etc/nginx/certs:rw
     environment:
       - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
-   restart: always
+    restart: always
   #--------------- Dummy Webmail Container for Certificate Generation ------
   webmail:
-      image: nginx:alpine
-      container_name: webmail
-      volumes_from:
-        - nginx-proxy
-      environment: 
+    image: nginx:alpine
+    container_name: webmail
+    volumes_from:
+      - nginx-proxy
+    environment: 
       - VIRTUAL_HOST=mail.${DOMAINNAME}
       #- VIRTUAL_NETWORK=nginx-proxy-net
       - VIRTUAL_PORT=80
@@ -63,16 +63,16 @@ services:
     hostname: downloads
     domainname: ${DOMAINNAME}
     environment:
-    - VIRTUAL_HOST=downloads.${DOMAINNAME}
-    - VIRTUAL_PORT=80
-   # - VIRTUAL_PROTO=https
-    - LETSENCRYPT_HOST=downloads.${DOMAINNAME}
-    - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
-    - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+      - VIRTUAL_HOST=downloads.${DOMAINNAME}
+      - VIRTUAL_PORT=80
+     # - VIRTUAL_PROTO=https
+      - LETSENCRYPT_HOST=downloads.${DOMAINNAME}
+      - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
+      - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
     volumes:
-        - nginxdata:/usr/share/nginx/downloads:ro
-        - ./downloadgateway/conf.d/:/tmp/conf.d/
-        - ./downloadgateway/contrib/:/usr/local/bin/
+      - nginxdata:/usr/share/nginx/downloads:ro
+      - ./downloadgateway/conf.d/:/tmp/conf.d/
+      - ./downloadgateway/contrib/:/usr/local/bin/
     entrypoint: /usr/local/bin/start_nginx.sh
 
    # restart: always
@@ -87,32 +87,32 @@ services:
     domainname: ${DOMAINNAME}
     container_name: mail
     ports:
-    - "25:25"
-    - "143:143"
-    - "587:587"
-    - "993:993"
+      - "25:25"
+      - "143:143"
+      - "587:587"
+      - "993:993"
     volumes:
-    - maildata:/var/mail
-    - mailstate:/var/mail-state
-    - ./mailserver/config/:/tmp/docker-mailserver/
-    - nginxdata:/var/attachments
-    - certData:/etc/letsencrypt/
-    - ./mailserver/gpg-mailgate/:/var/gpgmailgate/
-    - mailattachments:/var/resilio
-#    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
+      - maildata:/var/mail
+      - mailstate:/var/mail-state
+      - ./mailserver/config/:/tmp/docker-mailserver/
+      - nginxdata:/var/attachments
+      - certData:/etc/letsencrypt/
+      - ./mailserver/gpg-mailgate/:/var/gpgmailgate/
+      - mailattachments:/var/resilio
+  #    - ./mailserver/config/gpg-mailgate.conf:/etc/gpg-mailgate.conf
     environment:
-    - ENABLE_SPAMASSASSIN=${ENABLE_SPAMASSASSIN}
-    - ENABLE_CLAMAV=${ENABLE_CLAMAV}
-    - ENABLE_FAIL2BAN=${ENABLE_FAIL2BAN}
-    - ENABLE_POSTGREY=${ENABLE_POSTGREY}
-    - ONE_DIR=${ONE_DIR}
-    - DMS_DEBUG=${DMS_DEBUG}
-    - PERMIT_DOCKER=${PERMIT_DOCKER}
-    - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
-    - NGINX_DOWNLOAD_DOMAIN=downloads.${DOMAINNAME}
+      - ENABLE_SPAMASSASSIN=${ENABLE_SPAMASSASSIN}
+      - ENABLE_CLAMAV=${ENABLE_CLAMAV}
+      - ENABLE_FAIL2BAN=${ENABLE_FAIL2BAN}
+      - ENABLE_POSTGREY=${ENABLE_POSTGREY}
+      - ONE_DIR=${ONE_DIR}
+      - DMS_DEBUG=${DMS_DEBUG}
+      - PERMIT_DOCKER=${PERMIT_DOCKER}
+      - NGINX_SHARED_SECRET=${NGINX_SHARED_SECRET}
+      - NGINX_DOWNLOAD_DOMAIN=downloads.${DOMAINNAME}
     cap_add:
-    - NET_ADMIN
-    - SYS_PTRACE
+      - NET_ADMIN
+      - SYS_PTRACE
     restart: always
 
 #-------------------- Resilio Sync -------------------------------------------
@@ -124,11 +124,11 @@ services:
         dockerfile: Dockerfile
     domainname: ${DOMAINNAME}
     environment:
-    - DEVICE_NAME=${DEVICE_NAME}
+      - DEVICE_NAME=${DEVICE_NAME}
     volumes:
-        - syncdata:/usr/share/resilio-sync/
-        - mailattachments:/usr/share/attachments/
-        - ./resilio-sync/config/:/tmp/resilio-config/
+      - syncdata:/usr/share/resilio-sync/
+      - mailattachments:/usr/share/attachments/
+      - ./resilio-sync/config/:/tmp/resilio-config/
 
    # restart: always
  
@@ -138,15 +138,15 @@ services:
     container_name: web
     domainname: ${DOMAINNAME}
     environment:
-    - VIRTUAL_HOST=${DOMAINNAME}
-    #- VIRTUAL_NETWORK=nginx-proxy-net
-    - VIRTUAL_PORT=80
-   # - VIRTUAL_PROTO=https
-    - LETSENCRYPT_HOST=${DOMAINNAME}
-    - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
+      - VIRTUAL_HOST=${DOMAINNAME}
+      #- VIRTUAL_NETWORK=nginx-proxy-net
+      - VIRTUAL_PORT=80
+     # - VIRTUAL_PROTO=https
+      - LETSENCRYPT_HOST=${DOMAINNAME}
+      - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
     volumes:
-        - ./website/conf.d/:/etc/nginx/conf.d:ro
-        - ./website/content/:/usr/share/nginx/html:ro
+      - ./website/conf.d/:/etc/nginx/conf.d:ro
+      - ./website/content/:/usr/share/nginx/html:ro
 
    # restart: always
    
