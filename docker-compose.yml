@@ -31,31 +31,31 @@ services:
     entrypoint: /usr/local/bin/docker-gen -notify-sighup nginx-proxy -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
     restart: always
  #----------------------------Letsencrypt----------------- 
-letsencrypt-nginx-proxy-companion:
-  image: jrcs/letsencrypt-nginx-proxy-companion
-  container_name: letsencrypt-nginx-proxy-companion
-  volumes_from:
-    - nginx-proxy
-  volumes:
-    - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    - certData:/etc/nginx/certs:rw
-  environment:
-    - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
- restart: always
-#--------------- Dummy Webmail Container for Certificate Generation ------
-webmail:
-    image: nginx:alpine
-    container_name: webmail
+  letsencrypt-nginx-proxy-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt-nginx-proxy-companion
     volumes_from:
       - nginx-proxy
-    environment: 
-    - VIRTUAL_HOST=mail.${DOMAINNAME}
-    #- VIRTUAL_NETWORK=nginx-proxy-net
-    - VIRTUAL_PORT=80
-    - LETSENCRYPT_HOST=mail.${DOMAINNAME}
-    - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
-    - LETSENCRYPT_TEST=true
-  restart: always
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - certData:/etc/nginx/certs:rw
+    environment:
+      - NGINX_DOCKER_GEN_CONTAINER=nginx-gen
+   restart: always
+  #--------------- Dummy Webmail Container for Certificate Generation ------
+  webmail:
+      image: nginx:alpine
+      container_name: webmail
+      volumes_from:
+        - nginx-proxy
+      environment: 
+      - VIRTUAL_HOST=mail.${DOMAINNAME}
+      #- VIRTUAL_NETWORK=nginx-proxy-net
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=mail.${DOMAINNAME}
+      - LETSENCRYPT_EMAIL=letsssl@${DOMAINNAME}
+      - LETSENCRYPT_TEST=true
+    restart: always
 #----------------- Downloadgateway----------------------------
   downloadgateway:
     image: nginx:alpine
