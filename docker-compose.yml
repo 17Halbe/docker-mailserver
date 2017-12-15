@@ -69,7 +69,7 @@ services:
     - NGINX_SERVERNAMES=${NGINX_SERVERNAMES}
     volumes:
         - nginxdata:/usr/share/nginx/downloads:ro
-        - ./downloadgateway/conf.d/:/etc/nginx/conf.d/
+        - ./downloadgateway/conf.d/:/tmp/conf.d/
         - ./downloadgateway/contrib/:/usr/local/bin/
     entrypoint: /usr/local/bin/start_nginx.sh
 

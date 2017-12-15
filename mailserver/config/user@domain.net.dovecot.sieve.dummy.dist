@@ -1,0 +1,25 @@
+require ["fileinto", "copy", "vnd.dovecot.filter", "vnd.dovecot.pipe"]
+ 
+# Register gpg public key/smime certificate for mail encryption
+
+# File low-level spam in spam bucket, and viruses in Infected folder
+if anyof (header :contains "X-Spam-Level" "*****",
+          header :contains "X-Spam-Flag" "YES") {
+  fileinto "Spam";
+  setflag "\\Seen";  
+  stop;
+}
+if header :contains "X-Virus-Status" "Infected" {
+  fileinto "Infected";
+  stop;
+}
+
+# encrypt mails for local storage
+if anyof (address :matches "To" ["my.domain.net","my.other.domain.net"] {
+    filter "gpg-mailgate.py";
+    }
+
+}
+
+ 
+
