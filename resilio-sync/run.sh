@@ -1,7 +1,7 @@
 #!/bin/sh
 config=""
 
-for file in /tmp/resilio-config/conf.d/*
+for file in /tmp/resilio-config/conf.d/*.conf
 do
   config=${config}$( cat $file )','
 done
