@@ -198,17 +198,8 @@ case $1 in
       fail2ban)
         shift
         JAILS=$(docker exec -ti mail fail2ban-client status | grep "Jail list" | cut -f2- | sed 's/,//g')
-        case $1 in
-          unban)
-            shift
+        if [ -z "$1" ]; then
             for JAIL in $JAILS; do
-              _docker_image fail2ban-client set $JAIL unbanip $@
-            done
-            ;;
-          )
-            echo "target     prot opt source               destination"
-            for JAIL in $JAILS; do
-
               BANNED_IPs=$(_docker_image iptables -L f2b-$JAIL -n | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v '0.0.0.0')
               if [ -n $BANNED_IPs ]; then
                 echo Banned in $JAIL:
@@ -216,6 +207,14 @@ case $1 in
               fi
             done
             _docker_container iptables -L -n -v | grep 'f2b\|REJECT'
+            ;;
+        fi
+        case $1 in
+          unban)
+            shift
+            for JAIL in $JAILS; do
+              _docker_image fail2ban-client set $JAIL unbanip $@
+            done
             ;;
           *)
             _usage
