@@ -194,25 +194,29 @@ case $1 in
         else
           _docker_container /bin/bash -c "$@"
         fi
+	;;
       fail2ban)
         shift
-        JAILS=$(docker exec -ti mail fail2ban-client status | grep "Jail list" | cut -f2- | sed 's/,//g')
+        JAILS=$(_docker_container fail2ban-client status | grep "Jail list" | cut -f2- | sed 's/,//g')
         if [ -z "$1" ]; then
             for JAIL in $JAILS; do
-              BANNED_IPs=$(_docker_image iptables -L f2b-$JAIL -n | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v '0.0.0.0')
-              if [ -n $BANNED_IPs ]; then
-                echo Banned in $JAIL:
-                echo $BANNED_IPs 
+              BANNED_IP=$(_docker_container iptables -L f2b-$JAIL -n | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v '0.0.0.0')
+	      if [ -n "$BANNED_IP" ]; then
+                echo "Banned in $JAIL: $BANNED_IP"
               fi
             done
-            #_docker_container iptables -L -n -v | grep 'f2b\|REJECT'
         else
           case $1 in
             unban)
               shift
-              for JAIL in $JAILS; do
-                _docker_image fail2ban-client set $JAIL unbanip $@
-              done
+              if [ -n "$1" ]; then
+	        for JAIL in $JAILS; do
+		  echo "unbanning $@ from $JAIL:"
+                  _docker_container fail2ban-client set $JAIL unbanip $@
+                done
+	      else 
+		echo "No IP to unban specified"
+	      fi
               ;;
             *)
               _usage
