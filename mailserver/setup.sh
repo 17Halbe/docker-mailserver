@@ -205,21 +205,21 @@ case $1 in
                 echo $BANNED_IPs 
               fi
             done
-            _docker_container iptables -L -n -v | grep 'f2b\|REJECT'
+            #_docker_container iptables -L -n -v | grep 'f2b\|REJECT'
+        else
+          case $1 in
+            unban)
+              shift
+              for JAIL in $JAILS; do
+                _docker_image fail2ban-client set $JAIL unbanip $@
+              done
+              ;;
+            *)
+              _usage
+              ;;
+          esac
         fi
-        case $1 in
-          unban)
-            shift
-            for JAIL in $JAILS; do
-              _docker_image fail2ban-client set $JAIL unbanip $@
-            done
-            ;;
-          *)
-            _usage
-            ;;
-        esac
         ;;
-        
       *)
         _usage
         ;;
