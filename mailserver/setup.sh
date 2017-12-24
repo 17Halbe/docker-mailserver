@@ -194,7 +194,6 @@ case $1 in
         else
           _docker_container /bin/bash -c "$@"
         fi
-        ;;
       fail2ban)
         shift
         JAILS=$(docker exec -ti mail fail2ban-client status | grep "Jail list" | cut -f2- | sed 's/,//g')
@@ -207,7 +206,6 @@ case $1 in
               fi
             done
             _docker_container iptables -L -n -v | grep 'f2b\|REJECT'
-            ;;
         fi
         case $1 in
           unban)
