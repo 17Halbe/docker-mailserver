@@ -40,9 +40,9 @@ RUN chmod +x /usr/local/bin/run.sh
 RUN  ls -al /var/lib/resilio/storage-config > /dev/stdout \
   && echo " ---> Done installing"
 
-EXPOSE 55555
+EXPOSE 55555 3838
 
 VOLUME ./config:/tmp/resilio-config
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/run.sh"]
-CMD ["--log /dev/stdout"]
+#CMD ["--log /dev/stdout"]
