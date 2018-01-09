@@ -124,8 +124,14 @@ services:
         context: ./resilio-sync/
         dockerfile: Dockerfile
     domainname: ${DOMAINNAME}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
     ports:
       - "55555"
+      - "3838:3838"
     environment:
       - DEVICE_NAME=${DEVICE_NAME}
     volumes:
