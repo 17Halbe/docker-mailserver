@@ -18,7 +18,7 @@ import urllib
 try: 
 	host=os.environ["HOST"]
 except:
-	host="mx.localhost"
+	host="mail.localhost"
 
 outputdir="/var/attachments"  						# local Location to save the attachments to. Has to be writable by user: docker 
 nginx_url = "https://downloads" + host[host.find("."):]
@@ -27,7 +27,7 @@ try:
 except:
    pass
 
-nginx_secret = "<YOUR NGINX-SECRET>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
+nginx_secret = "<Your NGINX Secret>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
 
 
 ### Shouldnt have to change a thing from here
@@ -375,6 +375,8 @@ for part in mail.walk():
 	if part.get('Content-Disposition') is None:
 		continue
 	filename = part.get_filename()
+	if ".p7s" in filename:
+		continue
 	counter = 1
 	# if there is no filename, we create one with a counter to avoid duplicates
 	if not filename:
