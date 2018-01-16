@@ -13,6 +13,12 @@ from smtplib import SMTP
 #from email.Header import Header
 from email.utils import parseaddr, formataddr
 import urllib
+import logging
+from logging.handlers import SysLogHandler
+import base64
+import hashlib
+import datetime
+
 ### Adjust to your needs:
 #t[t.find("."):]
 try: 
@@ -27,8 +33,18 @@ try:
 except:
    pass
 
-nginx_secret = "<Your NGINX Secret>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
+nginx_secret = "<MYSECRET>" #os.environ["NGINX_SHARED_SECRET"]	#the shared secret with nginx to generate the secure files
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+syslog = SysLogHandler(address='/dev/log',facility='mail')
+formatter = logging.Formatter('%(asctime)s attext: %(levelname)-8s %(message)s', datefmt='%b %d %H:%M:%S')
+
+syslog.setFormatter(formatter)
+logger.addHandler(syslog)
+
+#logging.basicConfig(format='%(asctime)-11s gar-nich saveFile(' + getpass.getuser() + '): %(levelname)-8s %(message)s', filename='/var/log/mail.log', datefmt='%b %d %H:%M:%S',level=logging.DEBUG)
 
 ### Shouldnt have to change a thing from here
 
@@ -38,13 +54,12 @@ user = ""
 downloadLink = ""
 expires = ""
 user = os.environ["SENDER"] #str(sys.argv[1:])
-
 # source: https://stackoverflow.com/questions/12903893/python-imap-utf-8q-in-subject-string
 def decode_mime_words(s): return u''.join(word.decode(encoding or 'utf8') if isinstance(word, bytes) else word for word, encoding in email.header.decode_header(s))
 def sendmail(msgType,filename="",downloadLink="",expires=""):
     sender = os.environ["RECIPIENT"] #'downloads@gar-nich.net'
     recipient = os.environ["SENDER"]
-    print ("Sender: " + sender + " Empfänger: " + recipient, file=sys.stderr)
+    logging.debug("Sender: " + sender + " Empfänger: " + recipient)
     body = mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires)
     subject = body[body.find(':') + 2:body.find('\n')]
     body = body[body.find('\n'):]
@@ -102,7 +117,7 @@ def sendmail(msgType,filename="",downloadLink="",expires=""):
 
 '''
 	headers = Parser().parsestr(mail_Content(msgType, filename=filename,downloadLink=downloadLink,expires=expires)) #.encode("ascii", "ignore").decode("ascii"))
-	print (headers, file=sys.stderr)
+	logging.debug(headers, file=sys.stderr)
 	# Send the message via our own SMTP server.
 	s = smtplib.SMTP('localhost')
 #	s.send_message(msg.decode("utf-8"))
@@ -331,19 +346,15 @@ for line in sys.stdin:
 			sendmail("help")
 			sys.exit(1)
 	elif "dauer:" in line:
-		wordInSeconds = ""
+		amount = float(line[line.index("dauer:") + 7:].strip().split(maxsplit=1)[0])
 		if "tag" in line:
-			wordInSeconds = 86400
+			expires = str(int(time.mktime((datetime.datetime.now() + datetime.timedelta(days=amount)).timetuple())))
 		elif "woche" in line:
-			wordInSeconds = 604800
-		elif "monat" in line:
-			wordInSeconds = 2419200
-		elif "jahr" in line:
-			wordInSeconds = 31536000
+			expires = str(int(time.mktime((datetime.datetime.now() + datetime.timedelta(weeks=amount)).timetuple())))
 		else:
 			sendmail("fail_date_invalid")
 			sys.exit(1)
-		expires = int(time.time() + wordInSeconds * float(line[line.index("dauer:") + 7:].strip().split(maxsplit=1)[0]))
+#		expires = int(time.time() + wordInSeconds * float(line[line.index("dauer:") + 7:].strip().split(maxsplit=1)[0]))
 # checking collected data. Anything missing?
 # help
 # fail_date_invalid
@@ -375,7 +386,7 @@ for part in mail.walk():
 	if part.get('Content-Disposition') is None:
 		continue
 	filename = part.get_filename()
-	if ".p7s" in filename:
+	if "p7s" in filename.lower():
 		continue
 	counter = 1
 	# if there is no filename, we create one with a counter to avoid duplicates
@@ -395,34 +406,46 @@ for part in mail.walk():
 	while os.path.isfile(att_path):
 		i += 1
 		att_path = os.path.join(outputdir, filename + "_" + str(i))
-	print ('Saving to', str(att_path))
+	if i > 0:
+		filename = filename + "_" + str(i)
+
+	logging.debug('Saving to ' + str(att_path))
 	# finally write the stuff
+	oldmask = os.umask (11)
 	with open(att_path, 'wb') as fp:
 		fp.write(part.get_payload(decode=True))
-
 	#create downloadlink
-	link = subprocess.check_output("/bin/echo -n '" + str(expires) + str(nginx_url) + str(nginx_secret) + "' | /usr/bin/openssl md5 -binary | /usr/bin/openssl base64 | /usr/bin/tr +/ -_ | /usr/bin/tr -d =", shell=True, stderr=subprocess.STDOUT)
-	downloadLink = nginx_url + "/" + urllib.parse.quote_plus(att_path) + "?md5=" + link.strip().decode("utf-8") + "&expires=" + str(expires);
-
-
-	# 1 week Warningdate in Crontab: time.strftime('%M %H %d %m *',time.localtime(expires - 604800))
-	if time.time() < (expires - 605000):
-		cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires - 604800)) + " sendmail " + user + " < " + os.path.join(outputdir, ".futuremails", "") + str(expires) + filename + "-warning.mail') | crontab -", shell=True, stderr=subprocess.STDOUT)
-	# write cronjobs to send the mails: (crontab -l && echo "0 0 0 0 0 sendmail $user < $Downloadfolder/.futuremails/$timestamp.mail") | crontab - 
-	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires)) + " sendmail " + user + " < " + os.path.join(outputdir, ".futuremails", "") + str(expires)  + filename +  "-deleted.mail') | crontab -", shell=True, stderr=subprocess.STDOUT)
-	# write out cronjob to delete the file: 
-	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires + 7100)) + " rm -f " + att_path + "              #Time in Epoch:" + str(expires) + " !!Dont remove!!')  | crontab -", shell=True, stderr=subprocess.STDOUT)
-	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires + 7100)) + " rm -f " + os.path.join(mail_path, str(expires) + "*") + "')  | crontab -", shell=True, stderr=subprocess.STDOUT)
-	# write cronjob to remove entry from crontab : (crontab -l && echo "0 0 0 0 0 ( crontab -l | grep -v -F "$timestamp.mail" ) | crontab -") | crontab -
-	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(expires + 7200)) + " ( crontab -l | grep -v -F " + str(expires) + " ) | crontab -') | crontab -", shell=True, stderr=subprocess.STDOUT)
-	#write out future mails:
-	if time.time() < (expires - 605000):
-		with open(os.path.join(mail_path, str(expires) + filename + "-warning.mail"),mode='w', encoding='utf-8') as out:
-			out.write(mail_Content("file_delete_reminder",filename=filename,downloadLink=downloadLink,expires=expires))
-	with open(os.path.join(mail_path, str(expires) + filename + "-deleted.mail"),mode='w', encoding='utf-8') as out:
-		out.write(mail_Content("file_deleted",filename=filename,downloadLink=downloadLink,expires=expires))
+	os.umask (oldmask)
+	byte_string = (str(expires)  + str("/" + filename) + str(" " + nginx_secret)).encode('utf-8')
+	hashed_string = hashlib.md5( byte_string ).digest()
+	link = base64.b64encode(hashed_string).decode("utf-8")
+	link = link.replace('+', '-').replace('/', '_').replace("=", "")
 	
-	sendmail("success",filename=filename,downloadLink=downloadLink,expires=expires)
+	logging.debug("secret: " + str(link)) 
+	logging.debug("nginx_url: " + str(nginx_url))
+	logging.debug("filename: " + str(filename)) 
+	logging.debug("expires: " + str(expires)) 
+
+	downloadLink = nginx_url + str("/" + filename) + "?md5=" + str(link) + "&expires=" + str(expires);
+	logging.debug("Download-Link: " + str(downloadLink)) 
+	# 1 week Warningdate in Crontab: time.strftime('%M %H %d %m *',time.localtime(expires - 604800))
+	if time.time() < (int(expires) - 605000):
+		cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(int(expires) - 604800)) + " sendmail " + user + " < " + os.path.join(outputdir, ".futuremails", "") + str(expires) + filename + "-warning.mail') | crontab -", shell=True, stderr=subprocess.STDOUT)
+	# write cronjobs to send the mails: (crontab -l && echo "0 0 0 0 0 sendmail $user < $Downloadfolder/.futuremails/$timestamp.mail") | crontab - 
+	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(int(expires))) + " sendmail " + user + " < " + os.path.join(outputdir, ".futuremails", "") + str(expires)  + filename +  "-deleted.mail') | crontab -", shell=True, stderr=subprocess.STDOUT)
+	# write out cronjob to delete the file: 
+	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(int(expires) + 7100)) + " rm -f " + att_path + "              #Time in Epoch:" + str(expires) + " !!Dont remove!!')  | crontab -", shell=True, stderr=subprocess.STDOUT)
+	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(int(expires) + 7100)) + " rm -f " + os.path.join(mail_path, str(expires) + "*") + "')  | crontab -", shell=True, stderr=subprocess.STDOUT)
+	# write cronjob to remove entry from crontab : (crontab -l && echo "0 0 0 0 0 ( crontab -l | grep -v -F "$timestamp.mail" ) | crontab -") | crontab -
+	cron_result=subprocess.check_output("(crontab -l && echo '" + time.strftime('%M %H %d %m *',time.localtime(int(expires) + 7200)) + " ( crontab -l | grep -v -F " + str(expires) + " ) | crontab -') | crontab -", shell=True, stderr=subprocess.STDOUT)
+	#write out future mails:
+	if time.time() < (int(expires) - 605000):
+		with open(os.path.join(mail_path, str(expires) + filename + "-warning.mail"),mode='w', encoding='utf-8') as out:
+			out.write(mail_Content("file_delete_reminder",filename=filename,downloadLink=downloadLink,expires=int(expires)))
+	with open(os.path.join(mail_path, str(expires) + filename + "-deleted.mail"),mode='w', encoding='utf-8') as out:
+		out.write(mail_Content("file_deleted",filename=filename,downloadLink=downloadLink,expires=int(expires)))
+	
+	sendmail("success",filename=filename,downloadLink=downloadLink,expires=int(expires))
 
 # help
 # fail_date_invalid
