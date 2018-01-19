@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+#-------------------- Resilio Sync -------------------------------------------
+#  resilio-sync:
+#    image: resilio-sync:latest
+#    container_name: sync
+#    build:
+#        context: ./resilio-sync/
+#        dockerfile: Dockerfile
+#    domainname: ${DOMAINNAME}
+#    environment:
+#      - DEVICE_NAME=${DEVICE_NAME}
+#    volumes:
+#      - syncdata:/usr/share/resilio-sync/
+#      - mailattachments:/usr/share/attachments/
+#      - ./resilio-sync/config/:/tmp/resilio-config/
+
+   # restart: always
+

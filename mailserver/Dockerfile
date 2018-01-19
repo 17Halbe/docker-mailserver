@@ -5,6 +5,8 @@ COPY ./contrib/GnuPG /usr/local/lib/python2.7/dist-packages/GnuPG
 #RUN mkdir -p /var/gpgmailgate/smime
 #RUN mkdir /var/gpgmailgate/.gnupg
 #RUN chown -R nobody:nogroup /var/gpgmailgate/
+RUN mkdir -p /var/attachments/.futuremails
+RUN chown -R docker:docker /var/attachments
 
 RUN usermod -d /var/gpgmailgate nobody
 

@@ -33,7 +33,8 @@ RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/
 RUN chmod +x /usr/local/bin/dumb-init
 
 RUN mkdir -p /var/lib/resilio/storage-config
-
+RUN echo 80000000 > /var/lib/resilio/storage-config/debug.txt
+RUN echo 0 >> /var/lib/resilio/storage-config/debug.txt
 COPY run.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/run.sh
 

@@ -7,7 +7,7 @@
   "storage_path" : "/var/lib/resilio/storage-config",
   "vendor" : "docker",
   "display_new_version": false,
-  "directory_root" : "/var/lib/resilio/",
+  "directory_root" : "/usr/share/resilio-sync/",
   "directory_root_policy" : "all",
   "folder_defaults.use_tracker" : true,
   "folder_defaults.known_hosts" : "",

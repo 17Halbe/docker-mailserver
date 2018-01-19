@@ -199,24 +199,24 @@ case $1 in
         shift
         JAILS=$(_docker_container fail2ban-client status | grep "Jail list" | cut -f2- | sed 's/,//g')
         if [ -z "$1" ]; then
-            for JAIL in $JAILS; do
-              BANNED_IP=$(_docker_container iptables -L f2b-$JAIL -n | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v '0.0.0.0')
-	      if [ -n "$BANNED_IP" ]; then
-                echo "Banned in $JAIL: $BANNED_IP"
-              fi
-            done
+          for JAIL in $JAILS; do
+            BANNED_IP=$(_docker_container iptables -L f2b-$JAIL -n | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v '0.0.0.0')
+	          if [ -n "$BANNED_IP" ]; then
+              echo "Banned in $JAIL: $BANNED_IP"
+            fi
+          done
         else
           case $1 in
             unban)
               shift
               if [ -n "$1" ]; then
-	        for JAIL in $JAILS; do
-		  echo "unbanning $@ from $JAIL:"
+	              for JAIL in $JAILS; do
+		              echo "unbanning $@ from $JAIL:"
                   _docker_container fail2ban-client set $JAIL unbanip $@
                 done
-	      else 
-		echo "No IP to unban specified"
-	      fi
+	            else 
+		            echo "You need to specify an IP address. Run \"./setup.sh debug fail2ban\" to get a list of banned IP addresses."
+	            fi
               ;;
             *)
               _usage
@@ -229,7 +229,6 @@ case $1 in
         ;;
     esac
     ;;
-
   *)
     _usage
     ;;

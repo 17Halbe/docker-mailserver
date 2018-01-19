@@ -85,6 +85,11 @@ services:
     hostname: mail
     domainname: ${DOMAINNAME}
     container_name: mail
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
     ports:
       - "25:25"
       - "143:143"
